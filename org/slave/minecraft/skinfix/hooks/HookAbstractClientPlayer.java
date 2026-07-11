@@ -55,11 +55,11 @@ public final class HookAbstractClientPlayer {
                         if (isReader != null) isReader.close();
                     }
                 }
+            } catch(SSLException e) {
+                HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught SSLException while opening stream to player profile! Please use Java 8 or higher!", e);
             } finally {
                 if (is != null) is.close();
             }
-        } catch(SSLException e) {
-            HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught SSLException while opening stream to player profile! Please use Java 8 or higher!", e);
         } catch(IOException e) {
             HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught IOException getting the player's profile!", e);
         }
@@ -96,11 +96,11 @@ public final class HookAbstractClientPlayer {
                         if (isReader != null) isReader.close();
                     }
                 }
+            } catch(SSLException e) {
+                HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught SSLException while opening stream to player UUID profile! Please use Java 8 or higher!", e);
             } finally {
                 if (is != null) is.close();
             }
-        } catch(SSLException e) {
-            HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught SSLException while opening stream to player UUID profile! Please use Java 8 or higher!", e);
         } catch(IOException e) {
             HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught IOException getting the player's UUID profile!", e);
         }
