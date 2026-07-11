@@ -1,0 +1,152 @@
+diff --git a/AbstractClientPlayer.java.vanilla b/AbstractClientPlayer.java.skinfix
+index 453153a..749686a 100644
+--- a/AbstractClientPlayer.java.vanilla
++++ b/AbstractClientPlayer.java.skinfix
+@@ -1,5 +1,17 @@
+ package net.minecraft.src;
+ 
++import com.google.common.base.Strings;
++import com.google.gson.JsonArray;
++import com.google.gson.JsonObject;
++import com.google.gson.JsonParser;
++import org.bouncycastle.util.encoders.Base64;
++
++import java.io.BufferedReader;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.InputStreamReader;
++import java.net.URL;
++
+ public abstract class AbstractClientPlayer extends EntityPlayer
+ {
+     public static final ResourceLocation locationStevePng = new ResourceLocation("textures/entity/steve.png");
+@@ -71,14 +83,125 @@ public abstract class AbstractClientPlayer extends EntityPlayer
+         return (ThreadDownloadImageData)var5;
+     }
+ 
+-    public static String getSkinUrl(String par0Str)
++    public static JsonObject getPlayerProfileFromUsername(final String username) {
++        JsonObject playerProfile = null;
++        try {
++            URL urlPlayerProfile = new URL(
++                    String.format("https://api.mojang.com/users/profiles/minecraft/%s", StringUtils.stripControlCodes(username))
++            );
++
++            InputStream is = null;
++            InputStreamReader isReader = null;
++            BufferedReader bufferedReader = null;
++            try {
++                is = urlPlayerProfile.openStream();
++                isReader = new InputStreamReader(is);
++                bufferedReader = new BufferedReader(isReader);
++
++                playerProfile = new JsonParser().parse(bufferedReader)
++                        .getAsJsonObject();
++            } finally {
++                if (is != null) is.close();
++                if (isReader != null) isReader.close();
++                if (bufferedReader != null) bufferedReader.close();
++            }
++        } catch(IOException e) {
++            e.printStackTrace();
++        }
++        return playerProfile;
++    }
++
++    public static JsonObject getPlayerProfileFromUUID(final String uuid) {
++        if (!Strings.isNullOrEmpty(uuid)) {
++            JsonObject playerProfile = null;
++            try {
++                URL urlPlayerProfile = new URL(
++                        String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", StringUtils.stripControlCodes(uuid))
++                );
++
++                InputStream is = null;
++                InputStreamReader isReader = null;
++                BufferedReader bufferedReader = null;
++                try {
++                    is = urlPlayerProfile.openStream();
++                    isReader = new InputStreamReader(is);
++                    bufferedReader = new BufferedReader(isReader);
++
++                    playerProfile = new JsonParser().parse(bufferedReader)
++                            .getAsJsonObject();
++                } finally {
++                    if (is != null) is.close();
++                    if (isReader != null) isReader.close();
++                    if (bufferedReader != null) bufferedReader.close();
++                }
++            } catch(IOException e) {
++                e.printStackTrace();
++            }
++            return playerProfile;
++        }
++        return null;
++    }
++
++    public static JsonObject getPlayerProfileUUIDTextures(final JsonObject jsonObjectPlayerProfileUUID) {
++        if (jsonObjectPlayerProfileUUID != null) {
++            String base64Textures = null;
++            if (jsonObjectPlayerProfileUUID.has("properties")) {
++                JsonArray properties = jsonObjectPlayerProfileUUID.getAsJsonArray("properties");
++                for(int i = 0; i < properties.size(); i++) {
++                    JsonObject property = properties.get(i).getAsJsonObject();
++                    if (property.has("name") && property.get("name").getAsString().equals("textures")) {
++                        base64Textures = property.get("value").getAsString();
++                        break;
++                    }
++                }
++            }
++            if (base64Textures != null) {
++                return new JsonParser().parse(
++                        new String(Base64.decode(base64Textures))//Dirty hack
++                ).getAsJsonObject();
++            }
++        }
++        return null;
++    }
++
++    public static String getSkinUrl(String username)
+     {
+-        return String.format("http://skins.minecraft.net/MinecraftSkins/%s.png", new Object[] {StringUtils.stripControlCodes(par0Str)});
++        JsonObject playerProfileUsername = AbstractClientPlayer.getPlayerProfileFromUsername(username);
++        if (playerProfileUsername != null) {
++            String uuid = playerProfileUsername.getAsJsonPrimitive("id").getAsString();
++            if (uuid != null) {
++                JsonObject jsonObjectPlayerProfileUUID = AbstractClientPlayer.getPlayerProfileFromUUID(uuid);
++                JsonObject jsonObjectPlayerProfileTextures = AbstractClientPlayer.getPlayerProfileUUIDTextures(jsonObjectPlayerProfileUUID);
++                if (jsonObjectPlayerProfileTextures != null && jsonObjectPlayerProfileTextures.has("textures")) {
++                    JsonObject jsonObjectTextures = jsonObjectPlayerProfileTextures.getAsJsonObject("textures");
++                    if (jsonObjectTextures.has("SKIN")) {
++                        return jsonObjectTextures.getAsJsonObject("SKIN")
++                                .get("url").getAsString();
++                    }
++                }
++            }
++        }
++        return null;
+     }
+ 
+-    public static String getCapeUrl(String par0Str)
++    public static String getCapeUrl(String username)
+     {
+-        return String.format("http://skins.minecraft.net/MinecraftCloaks/%s.png", new Object[] {StringUtils.stripControlCodes(par0Str)});
++        JsonObject playerProfileUsername = AbstractClientPlayer.getPlayerProfileFromUsername(username);
++        if (playerProfileUsername != null) {
++            String uuid = playerProfileUsername.getAsJsonPrimitive("id").getAsString();
++            if (uuid != null) {
++                JsonObject jsonObjectPlayerProfileUUID = AbstractClientPlayer.getPlayerProfileFromUUID(uuid);
++                JsonObject jsonObjectPlayerProfileTextures = AbstractClientPlayer.getPlayerProfileUUIDTextures(jsonObjectPlayerProfileUUID);
++                if (jsonObjectPlayerProfileTextures != null && jsonObjectPlayerProfileTextures.has("textures")) {
++                    JsonObject jsonObjectTextures = jsonObjectPlayerProfileTextures.getAsJsonObject("textures");
++                    if (jsonObjectTextures.has("CAPE")) {
++                        return jsonObjectTextures.getAsJsonObject("CAPE")
++                                .get("url").getAsString();
++                    }
++                }
++            }
++        }
++        return null;
+     }
+ 
+     public static ResourceLocation getLocationSkin(String par0Str)
