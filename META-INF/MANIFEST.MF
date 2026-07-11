@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+FMLCorePlugin: org.slave.minecraft.skinfix.asm.LoadingPluginSkinFix
+FMLCorePluginContainsFMLMod: true
+Created-By: Master801
