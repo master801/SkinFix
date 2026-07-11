@@ -25,80 +25,93 @@ public final class HookAbstractClientPlayer {
 
     private static Logger logger;
 
+    /**
+     * Gets the player's profile based on username
+     * @param username Player's username
+     * @return Player Profile as a JSON object
+     */
     public static JsonObject getPlayerProfileFromUsername(final String username) {
         JsonObject playerProfile = null;
         try {
             URL urlPlayerProfile = new URL(
                     String.format("https://api.mojang.com/users/profiles/minecraft/%s", StringUtils.stripControlCodes(username))
             );
-
+            InputStream is = null;
             try {
-                InputStream is = urlPlayerProfile.openStream();
+                is = urlPlayerProfile.openStream();
                 if (is != null) {
+                    InputStreamReader isReader = null;
                     try {
-                        InputStreamReader isReader = new InputStreamReader(is);
+                        isReader = new InputStreamReader(is);
+                        BufferedReader bufferedReader = null;
                         try {
-                            BufferedReader bufferedReader = new BufferedReader(isReader);
+                            bufferedReader = new BufferedReader(isReader);
                             playerProfile = new JsonParser().parse(bufferedReader)
                                     .getAsJsonObject();
-                            bufferedReader.close();
-                        } catch(IOException e) {
-                            HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught IOException while reading and parsing player profile!", e);
-
+                        } finally {
+                            if (bufferedReader != null) bufferedReader.close();
                         }
-                        isReader.close();
-                    } catch(IOException e) {
-                        HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught IOException while reading!", e);
+                    } finally {
+                        if (isReader != null) isReader.close();
                     }
                 }
-            } catch(SSLException e) {
-                HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught SSLException while opening stream to player profile! Please use Java 8 or higher!", e);
-            } catch(IOException e) {
-                HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught IOException opening a stream to the player's profile!", e);
+            } finally {
+                if (is != null) is.close();
             }
+        } catch(SSLException e) {
+            HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught SSLException while opening stream to player profile! Please use Java 8 or higher!", e);
         } catch(IOException e) {
             HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught IOException getting the player's profile!", e);
         }
         return playerProfile;
     }
 
+    /**
+     * Actually gets the player's profile based on UUID
+     * @param uuid Player's UUID
+     * @return Player's profile as a JSON object
+     */
     public static JsonObject getPlayerProfileFromUUID(final String uuid) {
         JsonObject playerProfile = null;
         try {
             URL urlPlayerProfile = new URL(
                     String.format("https://sessionserver.mojang.com/session/minecraft/profile/%s", StringUtils.stripControlCodes(uuid))
             );
-
+            InputStream is = null;
             try {
-                InputStream is = urlPlayerProfile.openStream();
+                is = urlPlayerProfile.openStream();
                 if (is != null) {
+                    InputStreamReader isReader = null;
                     try {
-                        InputStreamReader isReader = new InputStreamReader(is);
+                        isReader = new InputStreamReader(is);
+                        BufferedReader bufferedReader = null;
                         try {
-                            BufferedReader bufferedReader = new BufferedReader(isReader);
+                            bufferedReader = new BufferedReader(isReader);
                             playerProfile = new JsonParser().parse(bufferedReader)
                                     .getAsJsonObject();
-                            bufferedReader.close();
-                        } catch(IOException e) {
-                            HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught IOException while reading and parsing UUID player profile!", e);
-
+                        } finally {
+                            if (bufferedReader != null) bufferedReader.close();
                         }
-                        isReader.close();
-                    } catch(IOException e) {
-                        HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught IOException while reading!", e);
+                    } finally {
+                        if (isReader != null) isReader.close();
                     }
                 }
-            } catch(SSLException e) {
-                HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught SSLException while opening stream to player UUID profile! Please use Java 8 or higher!", e);
-            } catch(IOException e) {
-                HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught IOException opening a stream to the player's UUID profile!", e);
+            } finally {
+                if (is != null) is.close();
             }
+        } catch(SSLException e) {
+            HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught SSLException while opening stream to player UUID profile! Please use Java 8 or higher!", e);
         } catch(IOException e) {
             HookAbstractClientPlayer.logger.log(Level.SEVERE, "Caught IOException getting the player's UUID profile!", e);
         }
         return playerProfile;
     }
 
+    /**
+     * Gets the player's textures from JSON object containing the player's (UUID) profile
+     * @param jsonObjectPlayerProfileUUID Player's UUID profile as a JSON object
+     * @return Player's textures as JSON object
+     */
     public static JsonObject getPlayerProfileUUIDTextures(final JsonObject jsonObjectPlayerProfileUUID) {
         if (jsonObjectPlayerProfileUUID != null) {
             String base64Textures = null;
@@ -121,6 +134,11 @@ public final class HookAbstractClientPlayer {
         return null;
     }
 
+    /**
+     * Called from {@link net.minecraft.client.entity.AbstractClientPlayer#getSkinUrl(String)}
+     * @param username Player's username
+     * @return String containing the URL, or null if none was found.
+     */
     public static String getSkinURL(final String username) {
         JsonObject playerProfileUsername = HookAbstractClientPlayer.getPlayerProfileFromUsername(username);
         if (playerProfileUsername != null) {
@@ -140,6 +158,11 @@ public final class HookAbstractClientPlayer {
         return null;
     }
 
+    /**
+     * Called from {@link net.minecraft.client.entity.AbstractClientPlayer#getCapeUrl(String)}
+     * @param username Player's username
+     * @return String containing the URL, or null if none was found.
+     */
     public static String getCapeURL(final String username) {
         JsonObject playerProfileUsername = HookAbstractClientPlayer.getPlayerProfileFromUsername(username);
         if (playerProfileUsername != null) {
@@ -160,6 +183,7 @@ public final class HookAbstractClientPlayer {
     }
 
     static {
+        //Set up the logger
         final String channel = "SkinFix";
         FMLLog.makeLog(channel);
         HookAbstractClientPlayer.logger = Logger.getLogger(channel);
